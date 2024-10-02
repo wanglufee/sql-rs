@@ -23,7 +23,7 @@ impl<'a> Parser<'a> {
     }
 
     // 解析
-    fn parse(&mut self) -> Result<Statement> {
+    pub fn parse(&mut self) -> Result<Statement> {
         let stmt = self.parse_statement()?;
         // 希望以分号结尾
         self.next_expect(Token::Semicolon)?;
@@ -144,7 +144,7 @@ impl<'a> Parser<'a> {
     fn parse_ddl_column(&mut self) -> Result<Column> {
         let mut column = Column{
             name: self.next_ident()?,
-            datetype: match self.next()? {
+            datatype: match self.next()? {
                 Token::Keyword(Keyword::Bool) | Token::Keyword(Keyword::Boolean) => DataType::Boolean,
                 Token::Keyword(Keyword::Int) | Token::Keyword(Keyword::Integer) => DataType::Integer,
                 Token::Keyword(Keyword::Float) | Token::Keyword(Keyword::Double) => DataType::Float,
