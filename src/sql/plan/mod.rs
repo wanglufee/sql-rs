@@ -1,6 +1,8 @@
 use planner::Planner;
 
-use super::{parser::ast::{Expression, Statement}, schema::Table};
+use crate::error::Result;
+
+use super::{engine::Transaction, executor::{Executor, ResultSet}, parser::ast::{Expression, Statement}, schema::Table};
 
 mod planner;
 
@@ -26,6 +28,10 @@ pub struct Plan(pub Node);
 impl Plan {
     pub fn build(stm: Statement) -> Self {
         Planner::new().build(stm)
+    }
+
+    pub fn execute<T: Transaction>(self, txn: &mut T) -> Result<ResultSet> {
+        <dyn Executor<T>>::build(self.0).execute(txn)
     }
 }
 
