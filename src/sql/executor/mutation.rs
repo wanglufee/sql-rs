@@ -23,7 +23,7 @@ impl Insert {
 
 
 impl<T: Transaction> Executor<T> for Insert {
-    fn execute(&self, txn: &mut T) -> Result<super::ResultSet> {
+    fn execute(self: Box<Self>, txn: &mut T) -> Result<super::ResultSet> {
         todo!()
     }
 }
