@@ -37,6 +37,6 @@ pub enum ResultSet {
     },
     Scan {
         columns: Vec<String>,
-        row: Vec<Row>
+        rows: Vec<Row>
     }
 }

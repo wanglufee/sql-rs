@@ -66,7 +66,8 @@ impl<E : Engine> MvccTransaction<E> {
     }
 }
 
+#[derive(Debug)]
 pub struct ScanResult {
-    key: Vec<u8>,
-    value: Vec<u8>,
+    pub key: Vec<u8>,
+    pub value: Vec<u8>,
 }

@@ -1,5 +1,5 @@
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 
 use super::{executor::ResultSet, parser::Parser, plan::Plan, schema::Table, types::Row};
 
@@ -29,16 +29,23 @@ pub trait Transaction {
     fn rollback(&self) -> Result<()>;
 
     // 创建行
-    fn create_row(&mut self, table: String, row: Row) -> Result<()>;
+    fn create_row(&mut self, table_name: String, row: Row) -> Result<()>;
 
     // 扫描表
-    fn scan_table(&self, table_name: String) -> Result<Row>;
+    fn scan_table(&self, table_name: String) -> Result<Vec<Row>>;
 
     // DDL相关操作
     fn create_table(&mut self, table: Table) -> Result<()>;
 
     // 获取表信息
     fn get_table(&self, table_name: String) -> Result<Option<Table>>;
+
+    // 必须拿到表名
+    fn must_get_table(&self, table_name: String) -> Result<Table> {
+        self.get_table(table_name.clone())?.ok_or(Error::Internel(
+            format!("table {} dose not exist!", table_name)
+        ))
+    }
 }
 
 // 客户端 session 定义

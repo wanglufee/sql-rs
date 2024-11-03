@@ -31,6 +31,16 @@ impl Value {
             Expression::Consts(Consts::String(s)) => Self::String(s),
         }
     }
+
+    pub fn datatype(&self) -> Option<DataType>{
+        match self {
+            Value::Null => None,
+            Value::Boolean(_) => Some(DataType::Boolean),
+            Value::Integer(_) => Some(DataType::Integer),
+            Value::Float(_) => Some(DataType::Float),
+            Value::String(_) => Some(DataType::String),
+        }
+    }
 }
 
 pub type Row = Vec<Value>;
