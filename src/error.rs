@@ -35,3 +35,9 @@ impl From<Box<ErrorKind>> for Error {
         Error::Internel(value.to_string())
     }
 }
+
+impl From<std::io::Error> for Error {
+    fn from(value: std::io::Error) -> Self {
+        Error::Internel(value.to_string())
+    }
+}
