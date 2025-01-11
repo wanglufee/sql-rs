@@ -43,7 +43,7 @@ mod tests {
     use super::Engine;
     use crate::{
         error::Result,
-        storage::{ memory::MemoryEngine},
+        storage::{ disk::DiskEngine, memory::MemoryEngine},
     };
     use std::{ops::Bound, path::PathBuf};
 
@@ -136,4 +136,16 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn test_disk() -> Result<()> {
+        test_point_opt(DiskEngine::new(PathBuf::from("/tmp/sqldb1/db.log"))?)?;
+        std::fs::remove_dir_all(PathBuf::from("/tmp/sqldb1"))?;
+
+        test_scan(DiskEngine::new(PathBuf::from("/tmp/sqldb2/db.log"))?)?;
+        std::fs::remove_dir_all(PathBuf::from("/tmp/sqldb2"))?;
+
+        test_scan_prefix(DiskEngine::new(PathBuf::from("/tmp/sqldb3/db.log"))?)?;
+        std::fs::remove_dir_all(PathBuf::from("/tmp/sqldb3"))?;
+        Ok(())
+    }
 }
