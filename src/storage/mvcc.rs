@@ -70,6 +70,7 @@ impl MvccKey {
 pub enum MvccKeyPerfix {
     NextVersion,
     TxnActive,
+    TxnWrite(Version),
 }
 
 impl MvccKeyPerfix {
@@ -104,12 +105,54 @@ impl<E : Engine> MvccTransaction<E> {
         })
     }
 
+    // 提交事务
     pub fn commit(&self) -> Result<()> {
-        Ok(())
+        let mut engine = self.engine.lock()?;
+
+        // 拿到 TxnWrite 的信息，然后将其删掉
+        let mut iter = engine.scan_prefix(MvccKeyPerfix::TxnWrite(self.state.version).encode());
+
+        let mut delete_keys = Vec::new();
+        while let Some((key,_)) = iter.next().transpose()? {
+            delete_keys.push(key);
+        }
+        drop(iter);
+
+        for key in delete_keys.into_iter() {
+            engine.delete(key)?;
+        }
+
+        // 从活跃事务列表中删除当前版本
+        engine.delete(MvccKey::TxnActive(self.state.version).encode())
     }
 
+    // 回滚事务
     pub fn rollback(&self) -> Result<()> {
-        Ok(())
+        let mut engine = self.engine.lock()?;
+
+        // 拿到 TxnWrite 的信息，然后将其删掉
+        let mut iter = engine.scan_prefix(MvccKeyPerfix::TxnWrite(self.state.version).encode());
+        // 回滚时需要将修改的数据一并删除
+        let mut delete_keys = Vec::new();
+        while let Some((key,_)) = iter.next().transpose()? {
+            match MvccKey::decode(key.clone())? {
+                MvccKey::TxnWrite(_, key) => {
+                    delete_keys.push(MvccKey::Version(key, self.state.version).encode());
+                },
+                _ => {
+                    return Err(Error::Internel(format!("unexpect key: {:?}", String::from_utf8(key))));
+                },
+            }
+            delete_keys.push(key);
+        }
+        drop(iter);
+
+        for key in delete_keys.into_iter() {
+            engine.delete(key)?;
+        }
+
+        // 从活跃事务列表中删除当前版本
+        engine.delete(MvccKey::TxnActive(self.state.version).encode())
     }
 
     // 插入数据
@@ -125,7 +168,25 @@ impl<E : Engine> MvccTransaction<E> {
     // 获取数据
     pub fn get(&self,key:Vec<u8>) -> Result<Option<Vec<u8>>> {
         let mut eng = self.engine.lock()?;
-        eng.get(key)
+        // 从版本0到当前版本进行扫描，获取可见的最新版本
+        let from = MvccKey::Version(key.clone(), 0).encode();
+        let to = MvccKey::Version(key.clone(), self.state.version).encode();
+        let mut iter = eng.scan(from..=to).rev();
+
+        while let Some((key, value)) = iter.next().transpose()? {
+            match MvccKey::decode(key.clone())? {
+                MvccKey::Version(_, version) => {
+                    if self.state.is_visible(version) {
+                        return Ok(bincode::deserialize(&value)?);
+                    }
+                },
+                _ => {
+                    return Err(Error::Internel(format!("unexpect key: {:?}", String::from_utf8(key))));
+                }
+            }
+        }
+
+        Ok(None)
     }
 
 
