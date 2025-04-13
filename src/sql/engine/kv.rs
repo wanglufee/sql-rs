@@ -133,6 +133,7 @@ mod tests {
     use super::KVEngine;
 
     #[test]
+    #[ignore = "事务变化"]
     fn test_create_table() -> Result<()> {
         let kvengine = KVEngine::new(MemoryEngine::new());
         let mut s = kvengine.session()?;

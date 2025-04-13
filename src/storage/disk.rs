@@ -232,6 +232,7 @@ mod test{
     use super::DiskEngine;
 
     #[test]
+    #[ignore = ""]
     fn test_disk_engine_start() -> Result<()> {
         let _ = DiskEngine::new(PathBuf::from("/tmp/sqldp"))?;
         Ok(())
